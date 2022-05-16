@@ -1,10 +1,12 @@
-require("dotenv").config();
 import { AlchemyProvider } from "@ethersproject/providers";
 import axios from "axios";
 import rateLimit from "axios-rate-limit";
+import dotenv from "dotenv";
 import { ethers } from "ethers";
 import { MongoClient } from "mongodb";
 import getAbi from "./utils/get-abi";
+
+dotenv.config({ path: "./.env.local" });
 
 type OpenseaOrder = {
   base_price: string;
@@ -36,8 +38,8 @@ export type OpenseaCollectionStats = {
 };
 
 async function getCollectionStats(collectionSlug: string) {
+  console.log(process.env.OPENSEA_API_KEY);
   const url = `https://api.opensea.io/api/v1/collection/${collectionSlug}/stats`;
-
   const http = rateLimit(axios.create(), {
     maxRequests: 4,
     perMilliseconds: 1000,
@@ -89,7 +91,7 @@ async function getListings(
       const { assets, next } = response.data;
       if (assets) {
         aggregatedAssets = [...aggregatedAssets, ...assets];
-        if (!next) {
+        if (!next || count === 0) {
           return aggregatedAssets
             .map((asset) => ({
               ...asset,
@@ -170,17 +172,22 @@ async function run() {
     : null;
 
   const mongoClient = new MongoClient(
-    `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@cluster0.ulnom.mongodb.net/${process.env.MONGO_ORGANISATION}?retryWrites=true&w=majority`
+    `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@cluster0.ulnom.mongodb.net/${process.env.MONGO_DATABASE}?retryWrites=true&w=majority`
   );
+
   try {
     await mongoClient.connect();
-    await mongoClient.db().collection("opensea-collections").updateOne(
-      { collection_slug: "mutant-ape-yacht-club" },
-      { $set: mutantStats },
-      {
-        upsert: true,
-      }
-    );
+    const result = await mongoClient
+      .db()
+      .collection("opensea-collections")
+      .updateOne(
+        { collection_slug: "mutant-ape-yacht-club" },
+        { $set: mutantStats },
+        {
+          upsert: true,
+        }
+      );
+    console.log(result);
     await mongoClient.db().collection("opensea-collections").updateOne(
       { collection_slug: "boredapeyachtclub" },
       { $set: apeStats },
@@ -213,6 +220,7 @@ async function run() {
     await mongoClient.close();
     run();
   } catch (e) {
+    console.log(e);
     await mongoClient.close();
     run();
   }

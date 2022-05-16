@@ -2,8 +2,8 @@
 
 git pull
 
-docker build -t elon_effect .
+docker build -t scrape_collections .
 
 docker kill $(docker ps -q)
 
-docker run -d elon_effect:latest
+docker run -d --restart unless-stopped scrape_collections:latest
