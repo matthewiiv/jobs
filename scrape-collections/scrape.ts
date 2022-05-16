@@ -38,7 +38,6 @@ export type OpenseaCollectionStats = {
 };
 
 async function getCollectionStats(collectionSlug: string) {
-  console.log(process.env.OPENSEA_API_KEY);
   const url = `https://api.opensea.io/api/v1/collection/${collectionSlug}/stats`;
   const http = rateLimit(axios.create(), {
     maxRequests: 4,
@@ -91,7 +90,7 @@ async function getListings(
       const { assets, next } = response.data;
       if (assets) {
         aggregatedAssets = [...aggregatedAssets, ...assets];
-        if (!next || count === 0) {
+        if (!next) {
           return aggregatedAssets
             .map((asset) => ({
               ...asset,
@@ -187,7 +186,6 @@ async function run() {
           upsert: true,
         }
       );
-    console.log(result);
     await mongoClient.db().collection("opensea-collections").updateOne(
       { collection_slug: "boredapeyachtclub" },
       { $set: apeStats },
