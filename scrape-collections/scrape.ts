@@ -4,7 +4,7 @@ import axios from "axios";
 import rateLimit from "axios-rate-limit";
 import { ethers } from "ethers";
 import { MongoClient } from "mongodb";
-import getAbi from "./etherscan/get-abi";
+import getAbi from "./utils/get-abi";
 
 type OpenseaOrder = {
   base_price: string;
