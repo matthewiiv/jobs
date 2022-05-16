@@ -170,29 +170,41 @@ async function run() {
     ? await updateClaimedStatus(apes, "alphaClaimed")
     : null;
 
+  const otherDeedStats = await getCollectionStats("otherdeed");
+
   const mongoClient = new MongoClient(
     `mongodb+srv://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@cluster0.ulnom.mongodb.net/${process.env.MONGO_DATABASE}?retryWrites=true&w=majority`
   );
 
   try {
     await mongoClient.connect();
-    const result = await mongoClient
-      .db()
-      .collection("opensea-collections")
-      .updateOne(
+    if (mutantStats) {
+      await mongoClient.db().collection("opensea-collections").updateOne(
         { collection_slug: "mutant-ape-yacht-club" },
         { $set: mutantStats },
         {
           upsert: true,
         }
       );
-    await mongoClient.db().collection("opensea-collections").updateOne(
-      { collection_slug: "boredapeyachtclub" },
-      { $set: apeStats },
-      {
-        upsert: true,
-      }
-    );
+    }
+    if (apeStats) {
+      await mongoClient.db().collection("opensea-collections").updateOne(
+        { collection_slug: "boredapeyachtclub" },
+        { $set: apeStats },
+        {
+          upsert: true,
+        }
+      );
+    }
+    if (otherDeedStats) {
+      await mongoClient.db().collection("opensea-collections").updateOne(
+        { collection_slug: "otherdeed" },
+        { $set: otherDeedStats },
+        {
+          upsert: true,
+        }
+      );
+    }
     if (mutantsNotClaimed) {
       await mongoClient
         .db()
